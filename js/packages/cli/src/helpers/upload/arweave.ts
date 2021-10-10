@@ -33,7 +33,6 @@ export async function arweaveUpload(
         [],
         'single',
     );
-    log.debug('transaction for arweave payment:', tx);
 
     const data = new FormData();
     data.append('transaction', tx['txid']);
@@ -46,12 +45,18 @@ export async function arweaveUpload(
 
     log.debug(`trying to upload ${index}.png: ${manifest.name}`);
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+        controller.abort();
+    }, 10 * 1000);
+
     const response = await fetch(
         'https://us-central1-principal-lane-200702.cloudfunctions.net/uploadFile4',
         {
             method: 'POST',
             // @ts-ignore
             body: data,
+            signal: controller.signal,
         },
     );
 
@@ -63,7 +68,7 @@ export async function arweaveUpload(
     if (metadataFile?.transactionId) {
         const link = `https://arweave.net/${metadataFile.transactionId}`;
         log.debug(`File uploaded: ${link}`);
-        return link;
+        return { link, payment: tx['txid'] };
     } else {
         // @todo improve
         throw new Error(`No transaction ID for upload: ${index}`);

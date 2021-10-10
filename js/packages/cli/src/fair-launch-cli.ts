@@ -1472,8 +1472,8 @@ program
                                         while (tries < 3 && !done) {
                                             try {
                                                 await adjustTicket({
-                                                    //@ts-ignore
                                                     amountNumber:
+                                                        //@ts-ignore
                                                         fairLaunchObj.currentMedian.toNumber(),
                                                     fairLaunchObj,
                                                     adjuster:
@@ -1791,6 +1791,7 @@ program
             await getFairLaunchTicket(
                 //@ts-ignore
                 fairLaunchObj.tokenMint,
+                //@ts-ignore
                 walletKeyPair.publicKey,
             )
         )[0];
@@ -1813,6 +1814,7 @@ program
             await adjustTicket({
                 //@ts-ignore
                 amountNumber: fairLaunchObj.currentMedian.toNumber(),
+                //@ts-ignore
                 fairLaunchObj,
                 //@ts-ignore
                 adjuster: ticket.buyer,
@@ -1921,6 +1923,7 @@ program
             await getAtaForMint(
                 //@ts-ignore
                 fairLaunchObj.tokenMint,
+                //@ts-ignore
                 walletKeyPair.publicKey,
             )
         )[0];
@@ -1930,7 +1933,9 @@ program
                 TOKEN_PROGRAM_ID,
                 //@ts-ignore
                 fairLaunchObj.tokenMint,
+                //@ts-ignore
                 myTokenAccount,
+                //@ts-ignore
                 walletKeyPair.publicKey,
                 [],
                 actual,
@@ -2017,7 +2022,9 @@ program
         );
         const tokenAccount = ( //@ts-ignore
             await getAtaForMint(
+                //@ts-ignore
                 fairLaunchObj.tokenMint,
+                //@ts-ignore
                 walletKeyPair.publicKey,
             )
         )[0];
@@ -2648,6 +2655,7 @@ program
             //@ts-ignore
             console.log(
                 'Reserve bps',
+                //@ts-ignore
                 fairLaunchObj.data.antiRugSetting.reserveBp,
             );
             //@ts-ignore
@@ -2660,6 +2668,7 @@ program
                 'Self destruct date - Date at which refunds are allowed (but not required):',
                 //@ts-ignore
                 new Date(
+                    //@ts-ignore
                     fairLaunchObj.data.antiRugSetting.selfDestructDate * 1000,
                 ),
             );

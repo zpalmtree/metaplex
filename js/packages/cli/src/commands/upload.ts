@@ -55,7 +55,7 @@ async function uploadIndex(
     }));
 
     try {
-        await anchorProgram.rpc.addConfigLines(startIndex, indexContent, {
+        const indicesTransaction = await anchorProgram.rpc.addConfigLines(startIndex, indexContent, {
             accounts: {
                 config,
                 authority: walletKeyPair.publicKey,
@@ -65,6 +65,7 @@ async function uploadIndex(
 
         for (const index of indexes) {
             cacheContent.items[index]!.onChain = true;
+            cacheContent.items[index].indicesTransaction = `https://explorer.solana.com/tx/${indicesTransaction}?cluster=${env}`;
         }
 
         return true;
@@ -101,6 +102,7 @@ async function doUpload(
     const index = imageName.replace(EXTENSION_PNG, '');
 
     let link = cacheContent?.items?.[i]?.link;
+    let payment;
 
     if (!link || !cacheContent.program.uuid) {
         const manifestPath = image.replace(EXTENSION_PNG, '.json');
@@ -116,7 +118,7 @@ async function doUpload(
         if (!link) {
             try {
                 if (storage === 'arweave') {
-                    link = await arweaveUpload(
+                    const result = await arweaveUpload(
                         walletKeyPair,
                         anchorProgram,
                         env,
@@ -125,6 +127,8 @@ async function doUpload(
                         manifest,
                         index,
                     );
+                    link = result.link;
+                    payment = result.payment;
                 } else if (storage === 'ipfs') {
                     link = await ipfsUpload(
                         ipfsCredentials,
@@ -134,11 +138,11 @@ async function doUpload(
                 }
 
                 if (link) {
-                    log.debug('setting cache for ', index);
                     cacheContent.items[index] = {
                         link,
                         name: manifest.name,
                         onChain: false,
+                        payment: `https://explorer.solana.com/tx/${payment}?cluster=${env}`,
                     };
                     cacheContent.authority = walletKeyPair.publicKey.toBase58();
                     saveCache(cacheName, env, cacheContent);
@@ -251,7 +255,7 @@ export async function upload(
         }
     }
 
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = 9;
 
     for (let i = 0; i < SIZE / BATCH_SIZE; i++) {
         const itemsRemaining = Math.min(BATCH_SIZE, SIZE - i * BATCH_SIZE);
@@ -290,8 +294,9 @@ export async function upload(
             const results = await Promise.all(processing);
 
             if (results.some(s => !s)) {
-                console.log('Failed to upload images, retrying in 10 seconds');
-                await sleep(10000);
+                console.log('Failed to upload images, retrying in 2 seconds');
+                await sleep(2000);
+                continue;
             }
 
             break;
@@ -362,17 +367,17 @@ export async function upload(
 
                         if (results.some(s => !s)) {
                             console.log(
-                                'Failed to verify files! Will try again in 10 seconds.',
+                                'Failed to verify files! Will try again in 1 second.',
                             );
-                            await sleep(1000 * 10);
+                            await sleep(1000 * 1);
                             continue;
                         }
                     } catch (err) {
                         console.log(err.toString());
                         console.log(
-                            'Failed to verify files! Will try again in 10 seconds.',
+                            'Failed to verify files! Will try again in 1 seconds.',
                         );
-                        await sleep(1000 * 10);
+                        await sleep(1000 * 1);
                         continue;
                     }
 

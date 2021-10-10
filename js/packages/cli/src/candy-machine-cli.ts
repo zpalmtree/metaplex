@@ -5,6 +5,7 @@ import { program } from 'commander';
 import * as anchor from '@project-serum/anchor';
 import BN from 'bn.js';
 import fetch from 'node-fetch';
+import AbortController from 'abort-controller';
 
 import { fromUTF8Array, parseDate, parsePrice } from './helpers/various';
 import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
@@ -32,6 +33,10 @@ import { signAllMetadataFromCandyMachine } from './commands/signAll';
 import log from 'loglevel';
 import { createMetadataFiles } from './helpers/metadata';
 import { createGenerativeArt } from './commands/createArt';
+
+process.on('uncaughtException', (err) => {
+    console.log('FATAL NODE JS PROCESS ERROR!', err);
+});
 
 program.version('0.0.2');
 
@@ -197,12 +202,26 @@ export async function doVerify(key, thisSlice, cacheContent) {
             return true;
         }
 
-        const json = await fetch(cacheItem.link);
+        console.log(`fetching ${cacheItem.link}`);
+
+        let controller = new AbortController();
+        let timeout = setTimeout(() => {
+            controller.abort();
+        }, 15 * 1000);
+
+        const json = await fetch(cacheItem.link, { signal: controller.signal });
         if (json.status == 200 || json.status == 204 || json.status == 202) {
             const body = await json.text();
             const parsed = JSON.parse(body);
             if (parsed.image) {
-                const check = await fetch(parsed.image);
+                console.log(`fetching ${parsed.image}`);
+
+                controller = new AbortController();
+                timeout = setTimeout(() => {
+                    controller.abort();
+                }, 15 * 1000);
+
+                const check = await fetch(parsed.image, { signal: controller.signal });
                 if (
                     check.status == 200 ||
                     check.status == 204 ||
@@ -223,6 +242,7 @@ export async function doVerify(key, thisSlice, cacheContent) {
                         } else {
                             log.info('Name', name, 'with', uri, 'checked out');
                             cacheItem.verified = true;
+                            cacheItem.image = parsed.image;
                             return true;
                         }
                     } else {
@@ -773,5 +793,6 @@ function setLogLevel(value, prev) {
     log.info('setting the log value to: ' + value);
     log.setLevel(value);
 }
+
 
 program.parse(process.argv);

@@ -11,28 +11,25 @@ import * as anchor from '@project-serum/anchor';
 import fs from 'fs';
 import BN from 'bn.js';
 import { createConfigAccount } from './instructions';
-import { web3 } from '@project-serum/anchor';
 import log from 'loglevel';
+import { Connection } from '@solana/web3.js';
 
-export function getRpcURL(env: string) {
-    /*
-    return {
-        url: 'https://api.devnet.solana.com',
-        wsURL: 'wss://api.devnet.solana.com',
-    };
-    */
+export function createConnection(env: string) {
+    let url;
+    let wsEndpoint;
 
     if (env === 'devnet') {
-        return {
-            url: 'https://dry-small-bush.solana-devnet.quiknode.pro/31b251093b17da198a07965c98b07f1bce41ef0b/',
-            wsURL: 'wss://dry-small-bush.solana-devnet.quiknode.pro/31b251093b17da198a07965c98b07f1bce41ef0b/',
-        };
+        url = 'https://dry-small-bush.solana-devnet.quiknode.pro/31b251093b17da198a07965c98b07f1bce41ef0b/';
+        wsEndpoint = 'wss://dry-small-bush.solana-devnet.quiknode.pro/31b251093b17da198a07965c98b07f1bce41ef0b/';
     } else {
-        return {
-            url: 'https://spring-crimson-shape.solana-mainnet.quiknode.pro/f2d407534a1d32d3769be775ec41cda289c953c8/',
-            wsURL: 'wss://spring-crimson-shape.solana-mainnet.quiknode.pro/f2d407534a1d32d3769be775ec41cda289c953c8/',
-        };
+        url = 'https://spring-crimson-shape.solana-mainnet.quiknode.pro/f2d407534a1d32d3769be775ec41cda289c953c8/';
+        wsEndpoint = 'wss://spring-crimson-shape.solana-mainnet.quiknode.pro/f2d407534a1d32d3769be775ec41cda289c953c8/';
     }
+
+    return new Connection(url, {
+        wsEndpoint,
+        //confirmTransactionInitialTimeout: 1000 * 15,
+    });
 }
 
 export const createConfig = async function (
@@ -301,11 +298,7 @@ export function loadWalletKey(keypair): Keypair {
 
 export async function loadCandyProgram(walletKeyPair: Keypair, env: string) {
     // @ts-ignore
-    const { url, wsURL } = getRpcURL(env);
-    console.log(`Using node ${url}, websocket ${wsURL}`);
-    const solConnection = new web3.Connection(url, {
-        wsEndpoint: wsURL,
-    });
+    const solConnection = createConnection(env);
     const walletWrapper = new anchor.Wallet(walletKeyPair);
     const provider = new anchor.Provider(solConnection, walletWrapper, {
         preflightCommitment: 'recent',
